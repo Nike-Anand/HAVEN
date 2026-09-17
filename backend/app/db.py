@@ -101,11 +101,20 @@ CREATE TABLE IF NOT EXISTS legal_queries (
     created_at      TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS sos_location_history (
+    id              TEXT PRIMARY KEY,
+    sos_id          TEXT NOT NULL,
+    latitude        REAL NOT NULL,
+    longitude       REAL NOT NULL,
+    timestamp       TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_contacts_user ON emergency_contacts(user_id);
 CREATE INDEX IF NOT EXISTS idx_sos_user ON sos_events(user_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON therapy_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_session ON therapy_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_alert_sos ON alert_logs(sos_id);
+CREATE INDEX IF NOT EXISTS idx_location_history_sos ON sos_location_history(sos_id, timestamp);
 """
 
 

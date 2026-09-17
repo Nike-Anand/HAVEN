@@ -101,6 +101,24 @@ class HavenClient {
     }
   }
 
+  static Future<void> streamLocation(String sosId, double latitude, double longitude) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sos/$sosId/location'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        "latitude": latitude,
+        "longitude": longitude
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to stream location');
+    }
+  }
+
   static Future<Map<String, dynamic>> sendTherapyMessage(String message, {String language = 'en'}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/therapy/send-message'),

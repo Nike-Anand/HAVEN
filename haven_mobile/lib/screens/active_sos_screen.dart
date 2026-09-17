@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:haven_mobile/api/haven_client.dart';
 import 'package:haven_mobile/screens/dashboard_screen.dart';
 
 class ActiveSOSScreen extends StatefulWidget {
   final Map<String, dynamic> sosData;
 
-  const ActiveSOSScreen({Key? key, required this.sosData}) : super(key: key);
+  const ActiveSOSScreen({super.key, required this.sosData});
 
   @override
   State<ActiveSOSScreen> createState() => _ActiveSOSScreenState();
@@ -13,6 +15,36 @@ class ActiveSOSScreen extends StatefulWidget {
 
 class _ActiveSOSScreenState extends State<ActiveSOSScreen> {
   bool _isCancelling = false;
+  StreamSubscription<Position>? _positionStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _startLiveTracking();
+  }
+
+  void _startLiveTracking() {
+    final locationSettings = const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 5, // Update if they move 5 meters
+    );
+    
+    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) {
+      if (position != null) {
+        HavenClient.streamLocation(
+          widget.sosData['sos_id'], 
+          position.latitude, 
+          position.longitude
+        ).catchError((e) => debugPrint("Live tracking failed: $e"));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
 
   Future<void> _cancelSOS() async {
     setState(() {

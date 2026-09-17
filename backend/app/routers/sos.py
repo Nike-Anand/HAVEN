@@ -159,6 +159,15 @@ def trigger_sos(
             (session_id, user_id, sos_id, now),
         )
         conn.commit()
+        
+    # --- SIMULATED TWILIO SMS DISPATCH ---
+    print("\n" + "="*50)
+    print("🚨 TWILIO SMS DISPATCH SIMULATION 🚨")
+    print(f"To: {len(contacts)} Emergency Contacts")
+    print(f"Message: URGENT: {user['email']} has triggered a HAVEN SOS alert! They may be in danger.")
+    print(f"Track their LIVE location here: https://haven.app/track/{sos_id}")
+    print("Reply 'ON_WAY' or 'POLICE' to acknowledge.")
+    print("="*50 + "\n")
 
     return {
         "sos_id": sos_id,
@@ -170,6 +179,35 @@ def trigger_sos(
         "authorities_notified": bool(user["notify_authorities"]),
     }
 
+class LocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
+
+@router.post("/{sos_id}/location")
+def update_live_location(
+    sos_id: str,
+    payload: LocationUpdate,
+    user_id: str = Depends(get_current_user)
+):
+    """Ingest a live GPS coordinate stream from the mobile app."""
+    now = db.now_iso()
+    with db.get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO sos_location_history (id, sos_id, latitude, longitude, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (str(uuid.uuid4()), sos_id, payload.latitude, payload.longitude, now)
+        )
+        # Also update the latest location on the main event
+        conn.execute(
+            "UPDATE sos_events SET latitude = ?, longitude = ? WHERE sos_id = ?",
+            (payload.latitude, payload.longitude, sos_id)
+        )
+        conn.commit()
+    
+    print(f"📍 Live Location Updated for SOS {sos_id}: {payload.latitude}, {payload.longitude}")
+    return {"status": "recorded"}
 
 @router.post("/{sos_id}/cancel")
 def cancel_sos(
