@@ -118,4 +118,52 @@ class HavenClient {
       throw Exception('Failed to add contact');
     }
   }
+
+  static Future<List<int>> hideDataInImage(List<int> imageBytes, String secretText) async {
+    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/stegano/hide'));
+    
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.fields['secret_text'] = secretText;
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      imageBytes,
+      filename: 'upload.png',
+    ));
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      throw Exception('Failed to hide data: ${response.body}');
+    }
+  }
+
+  static Future<String> extractDataFromImage(List<int> imageBytes) async {
+    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/stegano/extract'));
+    
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      imageBytes,
+      filename: 'upload.png',
+    ));
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['secret_text'] ?? '';
+    } else {
+      throw Exception('Failed to extract data: ${response.body}');
+    }
+  }
 }

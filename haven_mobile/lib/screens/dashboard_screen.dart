@@ -6,6 +6,8 @@ import 'package:haven_mobile/screens/therapy_screen.dart';
 import 'package:haven_mobile/screens/legal_screen.dart';
 import 'package:haven_mobile/screens/contacts_screen.dart';
 
+import 'package:haven_mobile/screens/vault_screen.dart';
+
 class DashboardScreen extends StatefulWidget {
   final String email;
 
@@ -58,6 +60,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       Navigator.push(context, MaterialPageRoute(builder: (context) => const LegalScreen()));
     } else if (index == 3) {
       Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactsScreen()));
+    } else if (index == 4) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const VaultScreen()));
     }
   }
 
@@ -122,6 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Therapy'),
           BottomNavigationBarItem(icon: Icon(Icons.gavel), label: 'Legal'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Contacts'),
+          BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Vault'),
         ],
       ),
     );
