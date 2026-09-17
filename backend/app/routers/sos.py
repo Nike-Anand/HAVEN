@@ -184,3 +184,19 @@ def respond_to_sos(
     if updated == 0:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"status": "recorded", "response": response}
+
+@router.post("/{sos_id}/audio")
+async def upload_audio(
+    sos_id: str,
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user)
+):
+    """Upload an audio clip for a specific SOS event."""
+    import os
+    import shutil
+    
+    os.makedirs("audio_logs", exist_ok=True)
+    file_path = f"audio_logs/{sos_id}_{file.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return {"message": "Audio saved successfully", "path": file_path}

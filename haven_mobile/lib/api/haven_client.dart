@@ -6,7 +6,7 @@ class HavenClient {
   static String? token;
   static String? email;
 
-  static Future<Map<String, dynamic>> triggerSOS() async {
+  static Future<Map<String, dynamic>> triggerSOS({double? latitude, double? longitude}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/sos/trigger'),
       headers: {
@@ -15,8 +15,8 @@ class HavenClient {
       },
       body: jsonEncode({
         "location": {
-          "latitude": 19.0760,
-          "longitude": 72.8777,
+          "latitude": latitude ?? 19.0760,
+          "longitude": longitude ?? 72.8777,
           "address": "Mobile Device Location"
         },
         "severity": "critical"
@@ -27,6 +27,27 @@ class HavenClient {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to trigger SOS');
+    }
+  }
+
+  static Future<void> uploadSOSAudio(String sosId, List<int> audioBytes, String filename) async {
+    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/sos/$sosId/audio'));
+    
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      audioBytes,
+      filename: filename,
+    ));
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to upload audio: ${response.body}');
     }
   }
 

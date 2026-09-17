@@ -1,11 +1,14 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:record/record.dart';
 import 'package:haven_mobile/api/haven_client.dart';
+import 'package:haven_mobile/api/offline_manager.dart';
 import 'package:haven_mobile/screens/active_sos_screen.dart';
-
 import 'package:haven_mobile/screens/therapy_screen.dart';
 import 'package:haven_mobile/screens/legal_screen.dart';
 import 'package:haven_mobile/screens/contacts_screen.dart';
-
 import 'package:haven_mobile/screens/vault_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -19,15 +22,81 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = false;
+  final AudioRecorder _audioRecorder = AudioRecorder();
+
+  @override
+  void initState() {
+    super.initState();
+    OfflineManager.startMonitoring();
+  }
+
+  @override
+  void dispose() {
+    _audioRecorder.dispose();
+    super.dispose();
+  }
+
+  Future<Position?> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return null;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return null;
+    }
+    
+    if (permission == LocationPermission.deniedForever) return null;
+
+    return await Geolocator.getCurrentPosition();
+  }
+
+  Future<void> _startAudioRecording(String sosId) async {
+    if (await _audioRecorder.hasPermission()) {
+      // Record to a temporary file
+      final path = 'sos_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _audioRecorder.start(const RecordConfig(), path: path);
+      
+      // Stop after 30 seconds and upload
+      Timer(const Duration(seconds: 30), () async {
+        final filePath = await _audioRecorder.stop();
+        if (filePath != null) {
+          try {
+            final bytes = await File(filePath).readAsBytes();
+            await HavenClient.uploadSOSAudio(sosId, bytes, 'audio_clip.m4a');
+          } catch (e) {
+            debugPrint("Failed to upload audio: $e");
+          }
+        }
+      });
+    }
+  }
 
   Future<void> _triggerSOS() async {
     setState(() {
       _isLoading = true;
     });
 
+    Position? position;
     try {
-      final response = await HavenClient.triggerSOS();
+      position = await _determinePosition();
+    } catch (e) {
+      debugPrint("Could not fetch location: $e");
+    }
+
+    try {
+      final response = await HavenClient.triggerSOS(
+        latitude: position?.latitude,
+        longitude: position?.longitude,
+      );
+      
       if (mounted) {
+        // Start recording in background
+        _startAudioRecording(response['sos_id']);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -36,11 +105,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       }
     } catch (e) {
+      // Offline fallback
+      await OfflineManager.queueSOS(position?.latitude, position?.longitude);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to trigger SOS: $e'),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('Network error. SOS queued and will trigger when online!'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 5),
           ),
         );
       }
