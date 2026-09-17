@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:haven_mobile/api/haven_client.dart';
 import 'package:haven_mobile/screens/active_sos_screen.dart';
 
+import 'package:haven_mobile/screens/therapy_screen.dart';
+import 'package:haven_mobile/screens/legal_screen.dart';
+import 'package:haven_mobile/screens/contacts_screen.dart';
+
 class DashboardScreen extends StatefulWidget {
   final String email;
 
@@ -44,6 +48,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  void _onNavTapped(int index) {
+    if (index == 1) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const TherapyScreen()));
+    } else if (index == 2) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const LegalScreen()));
+    } else if (index == 3) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactsScreen()));
     }
   }
 
@@ -101,13 +115,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         currentIndex: 0,
         selectedItemColor: const Color(0xFFc62828),
         unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index != 0) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('This feature is coming in Phase 3!')),
-            );
-          }
-        },
+        onTap: _onNavTapped,
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Therapy'),

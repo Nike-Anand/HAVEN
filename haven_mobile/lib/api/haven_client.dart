@@ -46,4 +46,76 @@ class HavenClient {
       throw Exception('Failed to cancel SOS');
     }
   }
+
+  static Future<Map<String, dynamic>> sendTherapyMessage(String message, {String language = 'en'}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/therapy/send-message'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"message": message, "language": language}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to send therapy message');
+    }
+  }
+
+  static Future<Map<String, dynamic>> askLegalQuestion(String query, {String language = 'en'}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/legal/ask'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"query": query, "language": language}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get legal guidance');
+    }
+  }
+
+  static Future<List<dynamic>> getContacts() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/contacts/'),
+      headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['contacts'] ?? [];
+    } else {
+      throw Exception('Failed to load contacts');
+    }
+  }
+
+  static Future<Map<String, dynamic>> addContact(String name, String phone, String relationship, {int priority = 2}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/contacts/add'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        "name": name,
+        "phone": phone,
+        "relationship": relationship,
+        "priority": priority
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to add contact');
+    }
+  }
 }
