@@ -1,14 +1,79 @@
 """SOS trigger / status / cancellation endpoints."""
+import asyncio
+import os
+import shutil
 import uuid
 from datetime import datetime, timezone
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel
 
 from .. import db, schemas
 from ..deps import get_current_user
 from ..encryption import encrypt_text
 
 router = APIRouter(prefix="/sos", tags=["sos"])
+
+
+class SOSRequest(BaseModel):
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    override_contacts: Optional[List[str]] = None
+
+
+class TimerStartRequest(BaseModel):
+    duration_minutes: int
+
+
+class TimerCancelRequest(BaseModel):
+    pass
+
+
+# Global state for MVP: maps user_id -> asyncio.Task
+ACTIVE_TIMERS = {}
+
+
+async def _timer_countdown(user_id: str, duration_minutes: int):
+    """Background task that sleeps for duration_minutes and then triggers SOS."""
+    try:
+        await asyncio.sleep(duration_minutes * 60)
+        # If we reach here, it wasn't cancelled! Trigger the SOS.
+        print(f"Safety Timer for user {user_id} expired! Triggering SOS!")
+        # We need to simulate a request. 
+        # For this MVP, we will just call trigger_sos manually.
+        trigger_sos(SOSRequest(), user_id)
+    except asyncio.CancelledError:
+        print(f"Safety Timer for user {user_id} was successfully cancelled.")
+
+
+@router.post("/timer/start")
+async def start_timer(
+    req: TimerStartRequest,
+    user_id: str = Depends(get_current_user)
+):
+    """Start a Dead Man's Switch timer."""
+    # Cancel existing timer if any
+    if user_id in ACTIVE_TIMERS:
+        ACTIVE_TIMERS[user_id].cancel()
+    
+    task = asyncio.create_task(_timer_countdown(user_id, req.duration_minutes))
+    ACTIVE_TIMERS[user_id] = task
+    
+    return {"status": "started", "duration_minutes": req.duration_minutes, "message": f"Timer started for {req.duration_minutes} minutes."}
+
+
+@router.post("/timer/cancel")
+async def cancel_timer(
+    user_id: str = Depends(get_current_user)
+):
+    """Cancel a running Dead Man's Switch timer."""
+    if user_id in ACTIVE_TIMERS:
+        ACTIVE_TIMERS[user_id].cancel()
+        del ACTIVE_TIMERS[user_id]
+        return {"status": "cancelled", "message": "Timer cancelled successfully. You are safe."}
+    else:
+        raise HTTPException(status_code=404, detail="No active timer found.")
 
 
 def _respond_to_alert(sos_id: str, contact_id: str, response_text: str) -> int:

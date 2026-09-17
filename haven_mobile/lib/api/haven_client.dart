@@ -68,6 +68,39 @@ class HavenClient {
     }
   }
 
+  static Future<Map<String, dynamic>> startSafetyTimer(int durationMinutes) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sos/timer/start'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"duration_minutes": durationMinutes}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to start safety timer');
+    }
+  }
+
+  static Future<Map<String, dynamic>> cancelSafetyTimer() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sos/timer/cancel'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to cancel safety timer');
+    }
+  }
+
   static Future<Map<String, dynamic>> sendTherapyMessage(String message, {String language = 'en'}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/therapy/send-message'),

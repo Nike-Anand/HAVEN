@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:record/record.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:haven_mobile/api/haven_client.dart';
 import 'package:haven_mobile/api/offline_manager.dart';
 import 'package:haven_mobile/screens/active_sos_screen.dart';
@@ -14,7 +16,7 @@ import 'package:haven_mobile/screens/vault_screen.dart';
 class DashboardScreen extends StatefulWidget {
   final String email;
 
-  const DashboardScreen({Key? key, required this.email}) : super(key: key);
+  const DashboardScreen({super.key, required this.email});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -23,16 +25,108 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = false;
   final AudioRecorder _audioRecorder = AudioRecorder();
+  
+  // Timer State
+  bool _timerActive = false;
+  int _timerDuration = 30;
+
+  // Shake State
+  StreamSubscription<UserAccelerometerEvent>? _shakeSubscription;
+  DateTime _lastShakeTime = DateTime.now();
+  int _shakeCount = 0;
+
+  // Speech State
+  stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
 
   @override
   void initState() {
     super.initState();
     OfflineManager.startMonitoring();
+    _initShakeDetector();
+    _initSpeech();
+  }
+
+  void _initShakeDetector() {
+    _shakeSubscription = userAccelerometerEventStream().listen((UserAccelerometerEvent event) {
+      double acceleration = event.x.abs() + event.y.abs() + event.z.abs();
+      if (acceleration > 20) {
+        final now = DateTime.now();
+        if (now.difference(_lastShakeTime).inSeconds < 2) {
+          _shakeCount++;
+        } else {
+          _shakeCount = 1;
+        }
+        _lastShakeTime = now;
+
+        if (_shakeCount >= 3) {
+          _shakeCount = 0;
+          if (!_isLoading) {
+            _triggerSOS();
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> _initSpeech() async {
+    await _speech.initialize();
+  }
+
+  void _toggleListening() async {
+    if (_isListening) {
+      _speech.stop();
+      setState(() => _isListening = false);
+    } else {
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(onResult: (val) {
+          if (val.recognizedWords.toUpperCase().contains('HAVEN HELP')) {
+            _speech.stop();
+            setState(() => _isListening = false);
+            if (!_isLoading) {
+              _triggerSOS();
+            }
+          }
+        });
+      }
+    }
+  }
+
+  void _toggleTimer() async {
+    if (_timerActive) {
+      try {
+        await HavenClient.cancelSafetyTimer();
+        setState(() => _timerActive = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Safety Timer Cancelled!')),
+          );
+        }
+      } catch (e) {
+        debugPrint(e.toString());
+      }
+    } else {
+      try {
+        await HavenClient.startSafetyTimer(_timerDuration);
+        setState(() => _timerActive = true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Safety Timer Started for $_timerDuration minutes!')),
+          );
+        }
+      } catch (e) {
+        debugPrint(e.toString());
+      }
+    }
   }
 
   @override
   void dispose() {
     _audioRecorder.dispose();
+    _shakeSubscription?.cancel();
+    _speech.cancel();
     super.dispose();
   }
 
@@ -56,11 +150,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _startAudioRecording(String sosId) async {
     if (await _audioRecorder.hasPermission()) {
-      // Record to a temporary file
       final path = 'sos_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _audioRecorder.start(const RecordConfig(), path: path);
       
-      // Stop after 30 seconds and upload
       Timer(const Duration(seconds: 30), () async {
         final filePath = await _audioRecorder.stop();
         if (filePath != null) {
@@ -94,7 +186,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
       
       if (mounted) {
-        // Start recording in background
         _startAudioRecording(response['sos_id']);
 
         Navigator.pushReplacement(
@@ -105,7 +196,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       }
     } catch (e) {
-      // Offline fallback
       await OfflineManager.queueSOS(position?.latitude, position?.longitude);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -164,7 +254,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: const Color(0xFFc62828),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.red.withOpacity(0.4),
+                      color: Colors.red.withValues(alpha: 0.4),
                       spreadRadius: 10,
                       blurRadius: 20,
                     ),
@@ -184,6 +274,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _toggleTimer,
+                  icon: Icon(_timerActive ? Icons.timer_off : Icons.timer),
+                  label: Text(_timerActive ? 'Cancel Timer' : 'Safety Timer (30m)'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _timerActive ? Colors.green : Colors.blueGrey,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _toggleListening,
+                  icon: Icon(_isListening ? Icons.mic : Icons.mic_off),
+                  label: Text(_isListening ? 'Listening...' : 'Wake Word'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isListening ? Colors.redAccent : Colors.blueGrey,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              "Or quickly shake phone 3 times to trigger SOS",
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            )
           ],
         ),
       ),
@@ -204,3 +323,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+
