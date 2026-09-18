@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from .. import db, schemas
-from ..deps import get_current_user
+from ..deps import get_current_user, get_optional_user
 from ..encryption import encrypt_text
 from ..sockets import sio
 
@@ -162,7 +162,7 @@ async def trigger_sos(
         
     # --- SIMULATED TWILIO SMS DISPATCH ---
     print("\n" + "="*50)
-    print("🚨 TWILIO SMS DISPATCH SIMULATION 🚨")
+    print("[!] TWILIO SMS DISPATCH SIMULATION [!]")
     print(f"To: {len(contacts)} Emergency Contacts")
     print(f"Message: URGENT: {user['email']} has triggered a HAVEN SOS alert! They may be in danger.")
     print(f"Track their LIVE location here: https://haven.app/track/{sos_id}")
@@ -252,7 +252,7 @@ async def update_live_location(
     except Exception:
         pass
 
-    print(f"📍 Live Location Updated for SOS {sos_id}: {payload.latitude}, {payload.longitude}")
+    print(f"[LOC] Live Location Updated for SOS {sos_id}: {payload.latitude}, {payload.longitude}")
     return {"status": "recorded"}
 
 @router.post("/{sos_id}/cancel")
@@ -326,13 +326,35 @@ def respond_to_sos(
     sos_id: str,
     contact_id: str,
     response: str,
-    user_id: str = Depends(get_current_user),
+    user_id: Optional[str] = Depends(get_optional_user),
 ):
-    """A verified contact acknowledges an alert (ON_WAY / EMS / POLICE)."""
-    updated = _respond_to_alert(sos_id, contact_id, response)
-    if updated == 0:
-        raise HTTPException(status_code=404, detail="Alert not found")
-    return {"status": "recorded", "response": response}
+    """A verified contact or responder acknowledges an alert (ON_WAY / EMS / POLICE / SAFE)."""
+    normalized = response.strip().upper()
+    if normalized not in {"ON_WAY", "EMS", "POLICE", "SAFE", "CALLING"}:
+        raise HTTPException(status_code=400, detail="Unsupported response code")
+
+    with db.get_connection() as conn:
+        # Update existing alert_log or create acknowledgment
+        cur = conn.execute(
+            "UPDATE alert_logs SET response_status = ?, responded_at = ? "
+            "WHERE sos_id = ? AND contact_id = ?",
+            (normalized, db.now_iso(), sos_id, contact_id),
+        )
+        if cur.rowcount == 0:
+            # Insert direct responder acknowledgment log
+            conn.execute(
+                """
+                INSERT INTO alert_logs (alert_id, sos_id, contact_id, user_id,
+                    alert_type, severity, delivery_status, response_status,
+                    responded_at, created_at)
+                VALUES (?, ?, ?, ?, 'responder_ack', 'critical', 'acknowledged', ?, ?, ?)
+                """,
+                (str(uuid.uuid4()), sos_id, contact_id, user_id or "responder", normalized, db.now_iso(), db.now_iso())
+            )
+        conn.commit()
+
+    return {"status": "recorded", "sos_id": sos_id, "contact_id": contact_id, "response": normalized}
+
 
 @router.post("/{sos_id}/audio")
 async def upload_audio(
@@ -349,3 +371,95 @@ async def upload_audio(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return {"message": "Audio saved successfully", "path": file_path}
+
+
+@router.get("/active")
+def list_active_sos():
+    """List all currently active SOS events for responders/monitors."""
+    with db.get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT s.sos_id, s.user_id, s.timestamp, s.status, s.latitude, s.longitude,
+                   s.severity, s.contacts_notified, s.authorities_notified, u.email as user_email
+            FROM sos_events s
+            LEFT JOIN users u ON s.user_id = u.user_id
+            WHERE s.status = 'active'
+            ORDER BY s.timestamp DESC
+            """
+        ).fetchall()
+
+    return {
+        "active_events": [
+            {
+                "sos_id": r["sos_id"],
+                "user_id": r["user_id"],
+                "user_email": r["user_email"] or "Anonymous User",
+                "timestamp": r["timestamp"],
+                "status": r["status"],
+                "latitude": r["latitude"],
+                "longitude": r["longitude"],
+                "severity": r["severity"],
+                "contacts_notified": r["contacts_notified"],
+                "authorities_notified": bool(r["authorities_notified"]),
+            }
+            for r in rows
+        ]
+    }
+
+
+@router.get("/{sos_id}/track")
+def track_sos_public(sos_id: str):
+    """Public tracking endpoint for emergency contacts and responders to view live SOS details and location."""
+    with db.get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT s.*, u.email as user_email
+            FROM sos_events s
+            LEFT JOIN users u ON s.user_id = u.user_id
+            WHERE s.sos_id = ?
+            """,
+            (sos_id,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="SOS alert not found")
+
+        # Get recent location history
+        history = conn.execute(
+            """
+            SELECT latitude, longitude, timestamp
+            FROM sos_location_history
+            WHERE sos_id = ?
+            ORDER BY timestamp ASC
+            """,
+            (sos_id,)
+        ).fetchall()
+
+        responses = conn.execute(
+            """
+            SELECT contact_id, response_status, responded_at
+            FROM alert_logs
+            WHERE sos_id = ?
+            """,
+            (sos_id,)
+        ).fetchall()
+
+    return {
+        "sos_id": row["sos_id"],
+        "user_email": row["user_email"] or "Protected User",
+        "status": row["status"],
+        "timestamp": row["timestamp"],
+        "latitude": row["latitude"],
+        "longitude": row["longitude"],
+        "severity": row["severity"],
+        "contacts_notified": row["contacts_notified"],
+        "authorities_notified": bool(row["authorities_notified"]),
+        "location_history": [
+            {"latitude": h["latitude"], "longitude": h["longitude"], "timestamp": h["timestamp"]}
+            for h in history
+        ],
+        "responses": [
+            {"contact_id": r["contact_id"], "status": r["response_status"], "responded_at": r["responded_at"]}
+            for r in responses
+        ]
+    }
+

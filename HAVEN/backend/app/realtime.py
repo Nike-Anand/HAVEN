@@ -149,4 +149,3 @@ async def end_sos(sid, data):
 from .main import app as fastapi_app
 
 asgi_app = __import__("socketio").ASGIApp(sio, other_asgi_app=fastapi_app)
-*** End Patch

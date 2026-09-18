@@ -74,7 +74,7 @@ def main() -> None:
     r.raise_for_status()
     print("[6] SOS status:", r.json()["status"])
 
-    print("\nDemo complete. ✓")
+    print("\nDemo complete. [OK]")
 
 
 if __name__ == "__main__":

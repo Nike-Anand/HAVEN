@@ -4,6 +4,9 @@ uvicorn[standard]
 pydantic==2.6.4
 python-multipart
 
+# Pin pydantic-core to the version required by pydantic 2.6.4
+pydantic-core==2.16.3
+
 # Field-level encryption at rest
 cryptography==50.0.1
 

@@ -253,4 +253,49 @@ class HavenClient {
       throw Exception('Failed to get directions: ${response.statusCode}');
     }
   }
+
+  static Future<List<dynamic>> getActiveSOS() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/sos/active'),
+      headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['active_events'] ?? [];
+    } else {
+      throw Exception('Failed to fetch active alerts');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getTrackSOS(String sosId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/sos/$sosId/track'),
+      headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to track SOS: ${response.statusCode}');
+    }
+  }
+
+  static Future<void> respondToSOS(String sosId, String contactId, String responseCode) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sos/$sosId/respond?contact_id=$contactId&response=$responseCode'),
+      headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to respond to alert');
+    }
+  }
 }
+

@@ -15,3 +15,13 @@ def get_current_user(authorization: str | None = Header(default=None)) -> str:
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token subject")
     return user_id
+
+
+def get_optional_user(authorization: str | None = Header(default=None)) -> str | None:
+    """Extract user id if token is provided, otherwise return None."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    payload = decode_token(authorization.split(" ", 1)[1].strip())
+    if not payload:
+        return None
+    return payload.get("sub")

@@ -20,8 +20,10 @@ if __name__ == "__main__":
     print(f"HAVEN API starting on http://{args.host}:{args.port}  (docs: /docs)")
     # Use the Socket.IO ASGI wrapper if available
     try:
-        import app.realtime as realtime
-        # Uvicorn can serve the ASGI `realtime.asgi_app` which wraps FastAPI
-        uvicorn.run(realtime.asgi_app, host=args.host, port=args.port, reload=args.reload)
+        if args.reload:
+            uvicorn.run("app.realtime:asgi_app", host=args.host, port=args.port, reload=True)
+        else:
+            import app.realtime as realtime
+            uvicorn.run(realtime.asgi_app, host=args.host, port=args.port)
     except Exception:
-        uvicorn.run("app.main:app", host=args.host, port=args.port, reload=args.reload)
+        uvicorn.run("app.main:app", host=args.host, port=args.port, reload=args.reload)

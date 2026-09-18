@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:haven_mobile/screens/dashboard_screen.dart';
 import 'package:haven_mobile/api/haven_client.dart';
 
@@ -36,6 +37,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final data = jsonDecode(response.body);
         HavenClient.token = data['token'];
         HavenClient.email = _emailController.text;
+
+        // Persist session for instant calculator unlock
+        const secure = FlutterSecureStorage();
+        await secure.write(key: 'auth_token', value: data['token']);
+        await secure.write(key: 'auth_email', value: _emailController.text);
+
         
         if (mounted) {
           Navigator.pushReplacement(

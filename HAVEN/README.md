@@ -1,153 +1,139 @@
-# HAVEN — Local Development
+# 🛡️ SafeHaven / HAVEN — Women's Crisis Safety & Support Platform
 
-Run backend API:
+An AI-powered, discreet, trauma-informed crisis intervention platform designed for women facing domestic abuse, monitored devices, or imminent danger.
+
+Built with **discreet calculator decoy access**, **dual-PIN panic routing**, **AI trauma therapy**, **Indian women's legal clarity**, **steganography evidence vault**, and **real-time responder rescue navigation (Person A SOS $\rightarrow$ Person B Map Route)**.
+
+---
+
+## 📱 Three-Layer Core Architecture
+
+```
+                                  Monitored Device Surface
+                                             │
+                        ┌────────────────────┴────────────────────┐
+                        │    Layer 1: Discreet Calculator Decoy   │
+                        │    (Fully Functional Decoy Interface)   │
+                        └────────────────────┬────────────────────┘
+                                             │
+                       ┌─────────────────────┴─────────────────────┐
+                       │                                           │
+             PIN: 8080= (Unlock App)                     PIN: 9999= (Panic SOS)
+                       │                                           │
+                       ▼                                           ▼
+          SafeHaven Core Dashboard                    Immediate Crisis SOS Trigger
+                       │                                           │
+         ┌─────────────┴─────────────┐                             ├─► Live GPS Streamed
+         ▼                           ▼                             ├─► Audio Evidence Recorded
+  Layer 2: AI Therapy       Layer 3: Legal Guide                   ├─► Contacts & Responders Alerted
+  Trauma-informed 24/7      Indian PWDVA 2005,                     └─► Auto-Initiates Crisis Therapy
+  grounding & copings       498A, FIR, 112/1091/181
+```
+
+---
+
+## 🚀 Key Features
+
+### 1. 🧮 Dual-PIN Calculator Decoy (Monitored Phone Protection)
+- **Normal Arithmetic**: Operates 100% as a standard calculator (`+`, `-`, `*`, `/`, decimals, error handling).
+- **App Unlock PIN (`8080=`)**: Unlocks the main dashboard. Automatically restores saved encrypted login sessions for instant access without re-authenticating.
+- **Panic / Direct SOS PIN (`9999=`)**: Silently and immediately triggers a real GPS SOS alert and transitions directly to the active emergency crisis screen.
+- **Quick Decoy Exit**: One-touch quick exit button on every screen to instantly snap back to the calculator and lock the decoy.
+
+### 2. 🗺️ Real-Time Responder Rescue Routing (A Triggers SOS $\rightarrow$ B Gets Map Route)
+- When **User A** activates SOS, **Responder / Emergency Contact B** receives an instant alert with live GPS coordinates.
+- Contact B accesses the interactive tracking view (`/track/:sosId` or mobile responder dashboard) and gets:
+  - Live coordinates and distance in kilometers.
+  - Estimated travel arrival time.
+  - Turn-by-turn road navigation instructions (powered by Open Source Routing Machine - OSRM).
+  - One-click Google Maps navigation and status acknowledgement (`I'm On My Way`).
+
+### 3. 🧠 Layer 2: AI Crisis Therapy Companion
+- Trauma-informed conversational support available 24/7.
+- Intent analysis, de-escalation, 4-7-8 breathing exercises, grounding techniques, and multilingual support.
+- Automatic crisis escalation detection (surfaces AASRA, iCall, NCW, 112).
+
+### 4. ⚖️ Layer 3: AI Legal Rights & Protection Guide
+- Plain-language legal advice scoped to Indian women's rights:
+  - **Protection of Women from Domestic Violence Act (PWDVA 2005)**: Protection Orders, Residence Orders, Monetary Relief, Child Custody.
+  - **Section 498A / Bharatiya Nyaya Sanhita (BNS)**: Cruelty by husband or relatives.
+  - **FIR and Zero FIR** procedures, Protection Officers, and free legal aid (DLSA - Article 39A).
+  - Direct 24/7 emergency helplines: **112** (All-India Emergency), **1091** (Women's Helpline), **181** (Domestic Violence).
+
+### 5. 🖼️ Steganography Evidence Vault
+- Encrypts and embeds sensitive notes, incident timestamps, and photos inside ordinary images using LSB steganography to ensure abuse logs cannot be found on device inspections.
+
+---
+
+## ⚡ Quick Start & Local Development
+
+### 1. Backend API (FastAPI + SQLite + Realtime WebSockets)
 
 ```bash
 cd backend
 python -m venv .venv
-. .venv/Scripts/Activate.ps1   # on Windows PowerShell
+. .venv/Scripts/Activate.ps1   # On Windows PowerShell (or source .venv/bin/activate on Linux/Mac)
 pip install -r requirements.txt
 python run.py
 ```
+- API server runs on: `http://127.0.0.1:8000`
+- Interactive Swagger docs: `http://127.0.0.1:8000/docs`
 
-Run mobile app (Flutter):
+### 2. Mobile App (Flutter)
 
 ```bash
 cd haven_mobile
 flutter pub get
-flutter run
+flutter run -d windows       # Native Windows desktop app
+# Or flutter run -d chrome  # Web preview
+# Or flutter run -d android # Android device/emulator
 ```
 
-Default credentials (for local testing):
-- `bala.ramyaram@gmail.com` / `NewPass456!` (password updated by dev)
-- `demo@haven.app` / `DemoPass123!` (demo flow creates this user)
-
-Calculator decoy:
-- Open the app; use the calculator and enter the PIN sequence (default `8080=`) then press `=` to unlock.
-- Change the PIN in Settings (AppBar → Settings).
-
-Notes:
-- Therapy and Legal bots work offline via local fallback engines in the mobile app; backend provides richer responses.
-- The `backend/demo.py` script exercises the full API flow against a running server.
-# 🚀 HAVEN — Women's Safety & Support Platform
-
-AI-powered platform for women in crisis: **discreet SOS**, **crisis AI therapy
-bot**, **legal guidance** (Indian women's rights), and **emergency contact
-coordination**. Built from the full product specification.
-
-> Status: backend **and** React web dashboard implemented and verified. The
-> mobile app (React Native / Flutter) is the next step and reuses this same API.
-
----
-
-## Architecture
-
-```
- Women (Web/Mobile)
-        │  HTTPS + JWT
-        ▼
-   FastAPI (API Gateway)  ──►  AI engines (offline rule-based; Bedrock-ready)
-        │
-        ▼
-  SQLite (mirrors spec DynamoDB schema, encrypted at rest via Fernet)
-```
-
-Layers keep the spec's responsibilities:
-- **Auth** — signup/login, PBKDF2 password hashing, HS256 JWTs (stdlib, no JWT dep).
-- **SOS** — trigger, cancel, status, contact acknowledgements, auto-start therapy.
-- **Therapy Bot** — intent-based crisis engine, escalation detection, multilingual.
-- **Legal Bot** — retrieval over an Indian women's rights knowledge base + helplines.
-- **Contacts** — add / verify / list / delete emergency contacts.
-- **Encryption** — sensitive fields (name, address, messages) encrypted at rest.
-
-The AI bots expose the exact payload shape of the spec's Bedrock (Claude 3)
-integration, so a live model can be swapped in without touching the routers.
-
----
-
-## Quick start
-
-### 1. Backend (FastAPI)
-
-```bash
-cd backend
-pip install -r requirements.txt
-python run.py            # API on http://127.0.0.1:8000  (docs at /docs)
-```
-
-### 2. Frontend (React dashboard)
+### 3. Web Dashboard (React 18 + Vite + Redux Toolkit + MUI)
 
 ```bash
 cd frontend
 npm install
-npm run dev              # dashboard on http://localhost:5173
+npm run dev
 ```
+- Dashboard runs on: `http://localhost:5173`
 
-The Vite dev server proxies `/auth`, `/sos`, `/therapy`, `/legal`, `/contacts`,
-`/health` to the backend on port 8000.
+---
 
-**Dashboard journeys:** sign up / log in → Dashboard with a large discreet **SOS**
-button (geolocation → `/sos/trigger`) → Active SOS screen (live timer, contacts
-notified, embedded crisis therapy chat, cancel) → Therapy chat → Legal Aid chat →
-Contacts manager → Profile & Safety (language, notify-authorities, change password).
+## 🧪 Verification & End-to-End Testing
 
-### Run the backend end-to-end demo
+Run the automated end-to-end smoke test against the running backend:
 
 ```bash
 cd backend
-python demo.py          # exercises the full API flow against a running server
+python demo.py
 ```
 
-### Run tests
+Run test suite:
 
 ```bash
-cd backend && python -m pytest tests -q      # 26 unit + integration tests
-cd frontend && npm run build                 # production build sanity check
+cd backend
+python -m pytest tests -q
 ```
 
 ---
 
-## API surface (all require `Authorization: Bearer <token>`)
+## 📋 API Surface Summary
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST   | `/auth/signup` | Create account (returns JWT) |
-| POST   | `/auth/login` | Login (returns JWT) |
-| GET    | `/auth/profile` | Current profile |
-| PUT    | `/auth/profile` | Update name / language / authorities flag |
-| POST   | `/auth/change-password` | Change password |
-| POST   | `/sos/trigger` | Trigger emergency alert + start therapy |
-| POST   | `/sos/{id}/cancel` | Cancel SOS |
-| GET    | `/sos/{id}/status` | SOS status + contact responses |
-| POST   | `/sos/{id}/respond` | Contact ack: `ON_WAY` / `EMS` / `POLICE` |
-| POST   | `/therapy/start` | Start a therapy session |
-| POST   | `/therapy/send-message` | Chat with the therapy bot |
-| GET    | `/therapy/{id}/history` | Session history |
-| POST   | `/legal/ask` | Ask the legal bot |
-| GET    | `/legal/resources` | Legal aid resources |
-| POST   | `/contacts/add` | Add emergency contact |
-| POST   | `/contacts/{id}/verify` | Verify contact |
-| GET    | `/contacts` | List contacts |
-| DELETE | `/contacts/{id}` | Remove contact |
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/auth/signup` | Public | Create protected account |
+| POST | `/auth/login` | Public | Authenticate and obtain JWT |
+| POST | `/sos/trigger` | Auth | Trigger emergency alert, broadcast GPS, start therapy |
+| GET | `/sos/active` | Public/Auth | List all currently active SOS alerts for responders |
+| GET | `/sos/{id}/track` | Public/Auth | Live GPS telemetry & status for Contact B |
+| POST | `/sos/{id}/respond` | Public/Auth | Contact/Responder acknowledgement (`ON_WAY`, `POLICE`, `SAFE`) |
+| GET | `/maps/directions` | Public/Auth | Compute road route with OSRM GeoJSON geometry and turn steps |
+| POST | `/therapy/send-message`| Auth | Interact with trauma-informed therapy bot |
+| POST | `/legal/ask` | Auth | Ask Indian legal rights queries |
+| POST | `/stegano/hide` | Auth | Encode private incident evidence into image |
+| POST | `/stegano/extract` | Auth | Extract secret evidence from image |
 
----
-
-## Implementation notes
-
-- **No AWS needed locally** — SQLite replaces DynamoDB (same table shape), the AI
-  bots are deterministic/offline, and JWT/encryption are stdlib + `cryptography`.
-- **Security** mirrors the spec: passwords hashed with PBKDF2-SHA256, tokens are
-  HS256-JWTs with a 60-minute expiry, sensitive DB fields are Fernet-encrypted,
-  phone numbers hashed, and auth is enforced on every protected route.
-- Frontend uses the doc's web stack: **React 18 + Material-UI + Redux Toolkit +
-  axios + react-router**, built with Vite and consuming the same REST API. The
-  mobile app (React Native / Flutter) can reuse this API directly.
-- Escalation (suicidal ideation, weapons) automatically flags the session for
-  human support and surfaces national crisis helplines (AASRA, iCall, NCW, 112).
-
-## Project layout
-
-```
 backend/
 ├── app/
 │   ├── main.py, config.py, db.py, security.py, encryption.py, deps.py, schemas.py

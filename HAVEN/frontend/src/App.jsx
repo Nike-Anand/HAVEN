@@ -9,6 +9,7 @@ import ActiveSOSPage from "./pages/ActiveSOSPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 import TherapyPage from "./pages/TherapyPage.jsx";
+import TrackSOSPage from "./pages/TrackSOSPage.jsx";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/track/:sosId" element={<TrackSOSPage />} />
 
       {/* Authenticated app */}
       <Route element={<Layout />}>
@@ -31,4 +33,4 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
-}
+}
