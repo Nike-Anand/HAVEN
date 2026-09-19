@@ -254,7 +254,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: const Color(0xFFc62828),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.red.withValues(alpha: 0.4),
+                      color: Colors.red.withOpacity(0.4),
                       spreadRadius: 10,
                       blurRadius: 20,
                     ),

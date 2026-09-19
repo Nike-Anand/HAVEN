@@ -155,7 +155,7 @@ class HavenClient {
 
   static Future<List<dynamic>> getContacts() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/contacts/'),
+      Uri.parse('$baseUrl/contacts'),
       headers: {
         if (token != null) 'Authorization': 'Bearer $token',
       },

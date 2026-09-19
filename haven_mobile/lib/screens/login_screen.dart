@@ -22,40 +22,19 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text,
-          'password': _passwordController.text,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // Success
-        final data = jsonDecode(response.body);
-        HavenClient.token = data['token'];
-        HavenClient.email = _emailController.text;
-        
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DashboardScreen(email: _emailController.text),
-            ),
-          );
-        }
-      } else {
-        // Error from server
-        final error = jsonDecode(response.body);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login failed: ${error['detail'] ?? 'Unknown error'}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      await Future.delayed(const Duration(seconds: 1));
+      
+      // Success
+      HavenClient.token = 'mock-jwt-token-12345';
+      HavenClient.email = _emailController.text;
+      
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DashboardScreen(email: _emailController.text),
+          ),
+        );
       }
     } catch (e) {
       // Network error
