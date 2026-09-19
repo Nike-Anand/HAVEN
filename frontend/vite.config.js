@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // Proxy HAVEN API calls to the FastAPI backend during development.
-const apiPrefixes = ["/auth", "/sos", "/therapy", "/legal", "/contacts", "/settings", "/sync", "/health"];
+const apiPrefixes = ["/auth", "/sos", "/therapy", "/legal", "/contacts", "/settings", "/sync", "/track", "/health"];
 
 export default defineConfig({
   plugins: [react()],

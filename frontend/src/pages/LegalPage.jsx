@@ -28,11 +28,13 @@ export default function LegalPage() {
     setError("");
     try {
       const { data } = await client.post("/legal/ask", { query: text, language: "en" });
+      const reply = data.reply || data.response || "";
+      const disclaimer = data.disclaimer ? `\n\n_Disclaimer: ${data.disclaimer}_` : "";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `${data.response}\n\n_Disclaimer: ${data.disclaimer}_`,
+          content: `${reply}${disclaimer}`,
           timestamp: new Date().toISOString(),
         },
       ]);

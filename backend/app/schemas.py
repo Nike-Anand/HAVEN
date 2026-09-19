@@ -116,6 +116,21 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class ChangePinRequest(BaseModel):
+    """Set or change the 4-6 digit safety PIN used by the discreet calculator.
+
+    Re-authenticates via the account password (a user must prove who they are to
+    set a PIN), then stores a hashed copy of the numeric PIN.
+    """
+    current_password: str
+    new_pin: str = Field(min_length=4, max_length=6)
+
+
+class VerifyPinRequest(BaseModel):
+    """Unlock the discreet calculator disguise with the numeric safety PIN."""
+    pin: str = Field(min_length=4, max_length=6)
+
+
 class NotificationPreferences(BaseModel):
     sms_alerts: bool = True
     email_alerts: bool = True
@@ -147,3 +162,13 @@ class SyncItem(BaseModel):
 
 class SyncRequest(BaseModel):
     queue: list[SyncItem] = []
+
+
+# --------------------------------------------------------------------------- #
+# Live tracking (public receiver page)
+# --------------------------------------------------------------------------- #
+class PoliceAlertRequest(BaseModel):
+    """Body for the public 'Alert police' action on the receiver tracking page."""
+    alertant_latitude: Optional[float] = None
+    alertant_longitude: Optional[float] = None
+    message: Optional[str] = None

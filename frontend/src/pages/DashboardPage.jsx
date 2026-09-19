@@ -6,7 +6,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ContactEmergency, Gavel, HealthAndSafety } from "@mui/icons-material";
+import { Calculate, ContactEmergency, Gavel, HealthAndSafety, LockReset } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -14,9 +14,11 @@ import { triggerSOS } from "../store/slices/sosSlice.js";
 import SOSButton from "../components/SOSButton.jsx";
 
 const QUICK_ACTIONS = [
+  { to: "/calculator", title: "Calculator", desc: "Discreet SOS disguise", icon: Calculate },
   { to: "/therapy", title: "AI Therapy", desc: "Talk to our crisis bot", icon: HealthAndSafety },
   { to: "/legal", title: "Legal Aid", desc: "Know your rights", icon: Gavel },
   { to: "/contacts", title: "Contacts", desc: "Manage your network", icon: ContactEmergency },
+  { to: "/profile", title: "Change PIN", desc: "Update your safety code", icon: LockReset },
 ];
 
 export default function DashboardPage() {

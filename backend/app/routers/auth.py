@@ -84,7 +84,53 @@ def login(payload: schemas.LoginRequest):
     )
 
 
-@router.post("/verify-2fa")
+@router.post("/change-pin")
+def change_pin(
+    payload: schemas.ChangePinRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Set / change the 4-6 digit safety PIN used to unlock the calculator disguise.
+
+    Re-authenticates with the account password, then stores a hashed copy of the
+    numeric PIN (never plaintext). The PIN is verified by `POST /auth/verify-pin`
+    before the discreet calculator reveals its SOS trigger.
+    """
+    with db.get_connection() as conn:
+        row = conn.execute(
+            "SELECT password_hash FROM users WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not verify_password(payload.current_password, row["password_hash"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    if not payload.new_pin.isdigit() or not (4 <= len(payload.new_pin) <= 6):
+        raise HTTPException(status_code=400, detail="PIN must be 4-6 digits")
+
+    with db.get_connection() as conn:
+        conn.execute(
+            "UPDATE users SET pin_hash = ?, updated_at = ? WHERE user_id = ?",
+            (hash_password(payload.new_pin), db.now_iso(), user_id),
+        )
+        conn.commit()
+    return {"status": "pin_changed", "message": "Safety PIN updated."}
+
+
+@router.post("/verify-pin")
+def verify_pin(
+    payload: schemas.VerifyPinRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Unlock the discreet calculator disguise with the numeric safety PIN."""
+    with db.get_connection() as conn:
+        row = conn.execute(
+            "SELECT pin_hash FROM users WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    if not row or not row["pin_hash"]:
+        raise HTTPException(status_code=400, detail="No safety PIN set. Set one in Profile & Safety.")
+    if not verify_password(payload.pin, row["pin_hash"]):
+        raise HTTPException(status_code=401, detail="Incorrect PIN")
+
+    return {"status": "unlocked", "message": "Calculator unlocked."}
 def verify_2fa(payload: schemas.Verify2FARequest):
     """Placeholder for TOTP/SMS 2FA.
 
@@ -166,3 +212,22 @@ def change_password(
         )
         conn.commit()
     return {"status": "password_changed"}
+
+
+@router.post("/verify-pin")
+def verify_pin(
+    payload: schemas.VerifyPinRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Authenticate the calculator unlock PIN (used by the discreet disguise)."""
+    with db.get_connection() as conn:
+        row = conn.execute(
+            "SELECT pin_hash FROM users WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    if not row or not row["pin_hash"]:
+        raise HTTPException(status_code=400, detail="No PIN set. Change it in Profile first.")
+    if not verify_password(payload.pin, row["pin_hash"]):
+        raise HTTPException(status_code=401, detail="Incorrect PIN")
+    return {"status": "unlocked", "message": "Access granted"}
+
+

@@ -6,7 +6,8 @@ export const fetchContacts = createAsyncThunk(
   "contacts/fetch",
   async () => {
     const { data } = await client.get("/contacts");
-    return data.contacts ?? [];
+    // Lambda returns a plain array OR { contacts: [...] }
+    return Array.isArray(data) ? data : (data.contacts ?? []);
   },
 );
 
@@ -51,11 +52,17 @@ const contactsSlice = createSlice({
         state.list = action.payload;
         state.status = "ok";
       })
-      .addCase(addContact.fulfilled, (state) => {
+      .addCase(addContact.fulfilled, (state, action) => {
+        // Append new contact immediately so UI updates without waiting for re-fetch
+        if (action.payload?.contact_id) {
+          state.list = [...state.list, action.payload];
+        }
         state.status = "ok";
       })
       .addCase(deleteContact.fulfilled, (state, action) => {
-        state.list = state.list.filter((c) => c.contact_id !== action.payload.contact_id);
+        // Lambda returns { deleted: contactId } or { contact_id: ... }
+        const deleted = action.payload?.deleted || action.payload?.contact_id;
+        state.list = state.list.filter((c) => c.contact_id !== deleted);
       });
   },
 });

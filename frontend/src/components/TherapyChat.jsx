@@ -30,7 +30,7 @@ export default function TherapyChat({ sosId = null, language = "en", height = 42
       setSessionId(data.session_id);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: data.response, timestamp: new Date().toISOString() },
+        { role: "assistant", content: data.reply || data.response, timestamp: new Date().toISOString() },
       ]);
       if (data.needs_human_support) {
         setError("A supporter has been flagged for human follow-up. You are not alone.");

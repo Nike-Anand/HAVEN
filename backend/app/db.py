@@ -109,6 +109,18 @@ CREATE TABLE IF NOT EXISTS sos_location_history (
     timestamp       TEXT NOT NULL
 );
 
+-- Police alerts raised from the public receiver tracking page. When a contact /
+-- helper opens a live SOS link and presses "Alert police", a row is logged here
+-- and the parent SOS is flagged as authorities_notified.
+CREATE TABLE IF NOT EXISTS police_alerts (
+    alert_id           TEXT PRIMARY KEY,
+    sos_id             TEXT NOT NULL,
+    alertant_latitude  REAL,
+    alertant_longitude REAL,
+    message            TEXT,
+    created_at         TEXT NOT NULL
+);
+
 -- User settings/preferences (spec: Settings & Preferences section). Each row
 -- holds the notification & privacy preference JSON payloads for one user.
 CREATE TABLE IF NOT EXISTS user_settings (
@@ -157,6 +169,20 @@ def init_db() -> None:
     """Create tables if they do not already exist."""
     with get_connection() as conn:
         conn.executescript(_SCHEMA)
+        _migrate(conn)
+
+
+def _migrate(conn) -> None:
+    """Add columns that were introduced after the table was first created.
+
+    `CREATE TABLE IF NOT EXISTS` does not alter existing tables, so new columns
+    (e.g. the safety PIN used by the discreet calculator disguise) are added here
+    when they are missing from a pre-existing database file.
+    """
+    user_cols = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+    if "pin_hash" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN pin_hash TEXT")
+        conn.commit()
 
 
 @contextmanager

@@ -1,15 +1,23 @@
 import json
 import os
 import urllib.request
+import urllib.error
 
 def call_gemini(prompt):
     api_key = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY_HERE")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}"
     payload = {"contents": [{"parts":[{"text": prompt}]}]}
     req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req) as response:
-        result = json.loads(response.read().decode())
-        return result['candidates'][0]['content']['parts'][0]['text']
+    
+    try:
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode())
+            return result['candidates'][0]['content']['parts'][0]['text']
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode()
+        raise Exception(f"HTTP {e.code}: {error_body}")
+    except Exception as e:
+        raise Exception(f"URLLib Error: {str(e)}")
 
 def lambda_handler(event, context):
     headers = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type,Authorization', 'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'}

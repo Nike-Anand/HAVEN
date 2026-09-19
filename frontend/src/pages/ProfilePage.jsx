@@ -154,6 +154,26 @@ export default function ProfilePage() {
     } catch (err) { setError(apiError(err)); }
   }
 
+  // ---- Discreet calculator safety PIN ------------------------------>
+  const [pin, setPin] = useState({ password: "", newPin: "" });
+  const [pinMsg, setPinMsg] = useState({ error: "", ok: "" });
+
+  async function changePin() {
+    setPinMsg({ error: "", ok: "" });
+    if (!/^\d{4,6}$/.test(pin.newPin)) {
+      setPinMsg({ error: "PIN must be 4–6 digits." });
+      return;
+    }
+    try {
+      await client.post("/auth/change-pin", {
+        current_password: pin.password,
+        new_pin: pin.newPin,
+      });
+      setPin({ password: "", newPin: "" });
+      setPinMsg({ ok: "Safety PIN updated. Use it to unlock the Calculator disguise." });
+    } catch (err) { setPinMsg({ error: apiError(err) }); }
+  }
+
   if (!profile) return <CircularProgress />;
 
   return (

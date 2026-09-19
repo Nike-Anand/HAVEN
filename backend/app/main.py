@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import config, db
-from .routers import auth, contacts, legal, settings, sos, stegano, sync, therapy
+from .routers import auth, contacts, legal, settings, sos, stegano, sync, therapy, track
 
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ app.include_router(legal.router)
 app.include_router(settings.router)
 app.include_router(sync.router)
 app.include_router(stegano.router)
+app.include_router(track.router)
 
 
 @app.get("/health", tags=["meta"])

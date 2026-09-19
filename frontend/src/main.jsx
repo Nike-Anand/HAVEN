@@ -6,16 +6,34 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { store } from "./store/store.js";
 
-// HAVEN brand theme (calm navy + safety red), per the SOS-first design.
+// HAVEN brand theme — bright, friendly, light-only (no dark theme anywhere).
+// Primary = vivid magenta/pink, secondary = sunny amber, success = mint green.
 const theme = createTheme({
   palette: {
-    primary: { main: "#1f2d3d", contrastText: "#ffffff" },
-    secondary: { main: "#2f3a86" },
-    error: { main: "#c62828", light: "#ef5350" },
-    background: { default: "#f6f4f0" },
+    mode: "light",
+    primary: { main: "#ff2e63", light: "#ff6b9d", dark: "#d90443", contrastText: "#ffffff" },
+    secondary: { main: "#ffa62b", light: "#ffc76b", dark: "#e68500", contrastText: "#ffffff" },
+    success: { main: "#00c292", light: "#61e6c3", dark: "#00a37d", contrastText: "#ffffff" },
+    info: { main: "#5aa9ff", light: "#94c9ff", dark: "#1f7ae0", contrastText: "#ffffff" },
+    error: { main: "#e53935", light: "#ff6f60" },
+    background: { default: "#fff6f9", paper: "#ffffff" },
   },
+  shape: { borderRadius: 14 },
   typography: {
     fontFamily: '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    h4: { fontWeight: 800 },
+    h5: { fontWeight: 700 },
+    button: { textTransform: "none", fontWeight: 700 },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: { boxShadow: "none", "&:hover": { boxShadow: "0 6px 18px rgba(255,46,99,.25)" } },
+      },
+    },
+    MuiCard: {
+      styleOverrides: { root: { boxShadow: "0 8px 30px rgba(120,40,90,.10)" } },
+    },
   },
 });
 
