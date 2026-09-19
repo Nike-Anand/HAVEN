@@ -27,6 +27,94 @@ const LANGUAGES = [
   ["bn", "বাংলা"],
 ];
 
+const NOTIF_DEFAULTS = {
+  sms_alerts: true,
+  email_alerts: true,
+  push_notifications: true,
+  vibration: true,
+  sound_enabled: false,
+};
+
+const PRIVACY_DEFAULTS = {
+  share_location_with_contacts: true,
+  allow_data_sharing: false,
+  data_retention_days: 90,
+};
+
+function NotificationSettings() {
+  const [notif, setNotif] = useState(NOTIF_DEFAULTS);
+  const [privacy, setPrivacy] = useState(PRIVACY_DEFAULTS);
+  const [msg, setMsg] = useState({ error: "", ok: "" });
+
+  useEffect(() => {
+    setMsg({ error: "", ok: "" });
+    client
+      .get("/settings")
+      .then(({ data }) => {
+        setNotif({ ...NOTIF_DEFAULTS, ...data.notification_preferences });
+        setPrivacy({ ...PRIVACY_DEFAULTS, ...data.privacy });
+      })
+      .catch(() => {
+        // Keep defaults if the server has no saved settings yet.
+      });
+    // eslint-disable-next-line
+  }, []);
+
+  async function save() {
+    setMsg({ error: "", ok: "" });
+    try {
+      await client.put("/settings/notification-preferences", notif);
+      await client.put("/settings/privacy", privacy);
+      setMsg({ ok: "Settings saved." });
+    } catch (err) {
+      setMsg({ error: apiError(err) });
+    }
+  }
+
+  const toggle = (key) => (e) => setNotif({ ...notif, [key]: e.target.checked });
+  const togglePrivacy = (key) => (e) => setPrivacy({ ...privacy, [key]: e.target.checked });
+
+  return (
+    <Stack>
+      {msg.error && <Alert severity="error">{msg.error}</Alert>}
+      {msg.ok && <Alert severity="success">{msg.ok}</Alert>}
+      <Typography variant="subtitle2" sx={{ mt: 1 }}>Alerts</Typography>
+      {Object.entries({
+        sms_alerts: "SMS alerts to emergency contacts",
+        email_alerts: "Email notifications",
+        push_notifications: "Push notifications",
+        vibration: "Vibration on SOS",
+        sound_enabled: "Sound on SOS",
+      }).map(([key, label]) => (
+        <FormControlLabel
+          key={key}
+          control={<Switch checked={!!notif[key]} onChange={toggle(key)} />}
+          label={label}
+        />
+      ))}
+      <Typography variant="subtitle2" sx={{ mt: 1 }}>Privacy</Typography>
+      <FormControlLabel
+        control={<Switch checked={!!privacy.share_location_with_contacts} onChange={togglePrivacy("share_location_with_contacts")} />}
+        label="Share my live location with trusted contacts"
+      />
+      <FormControlLabel
+        control={<Switch checked={!!privacy.allow_data_sharing} onChange={togglePrivacy("allow_data_sharing")} />}
+        label="Allow de-identified data sharing for safety research"
+      />
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1 }}>
+        <TextField
+          label="Data retention (days)"
+          type="number"
+          size="small"
+          value={privacy.data_retention_days}
+          onChange={(e) => setPrivacy({ ...privacy, data_retention_days: Number(e.target.value) || 90 })}
+        />
+        <Button variant="contained" onClick={save}>Save settings</Button>
+      </Stack>
+    </Stack>
+  );
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
@@ -92,6 +180,15 @@ export default function ProfilePage() {
               ? "Notify authorities automatically when SOS is pressed"
               : "Notify authorities on SOS (recommended for your safety)"}
           />
+        </CardContent>
+      </Card>
+
+      <Divider />
+
+      <Card variant="outlined">
+        <CardContent>
+          <Typography variant="h6">Notifications & Privacy</Typography>
+          <NotificationSettings />
         </CardContent>
       </Card>
 

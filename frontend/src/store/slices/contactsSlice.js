@@ -6,7 +6,7 @@ export const fetchContacts = createAsyncThunk(
   "contacts/fetch",
   async () => {
     const { data } = await client.get("/contacts");
-    return data.contacts;
+    return data.contacts ?? [];
   },
 );
 

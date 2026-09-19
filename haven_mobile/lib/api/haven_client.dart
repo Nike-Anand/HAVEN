@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class HavenClient {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = 'https://6qc8x2kc9i.execute-api.eu-north-1.amazonaws.com/dev';
   static String? token;
   static String? email;
 

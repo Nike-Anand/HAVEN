@@ -122,3 +122,28 @@ class NotificationPreferences(BaseModel):
     push_notifications: bool = True
     vibration: bool = True
     sound_enabled: bool = False
+
+
+class PrivacyPreferences(BaseModel):
+    share_location_with_contacts: bool = True
+    allow_data_sharing: bool = False
+    data_retention_days: int = Field(default=90, ge=1)
+
+
+# --------------------------------------------------------------------------- #
+# Offline data sync / device registration
+# --------------------------------------------------------------------------- #
+class DeviceRegisterRequest(BaseModel):
+    device_type: Literal["ios", "android", "web"] = "web"
+    device_name: Optional[str] = None
+    push_token: Optional[str] = None
+
+
+class SyncItem(BaseModel):
+    type: Literal["SOS", "MESSAGE"]
+    timestamp: Optional[str] = None
+    data: dict = {}
+
+
+class SyncRequest(BaseModel):
+    queue: list[SyncItem] = []

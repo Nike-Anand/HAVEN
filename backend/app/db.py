@@ -109,12 +109,36 @@ CREATE TABLE IF NOT EXISTS sos_location_history (
     timestamp       TEXT NOT NULL
 );
 
+-- User settings/preferences (spec: Settings & Preferences section). Each row
+-- holds the notification & privacy preference JSON payloads for one user.
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id  TEXT PRIMARY KEY,
+    notification_preferences TEXT,
+    privacy  TEXT,
+    updated_at TEXT NOT NULL
+);
+
+-- Device registrations (spec: Device Registrations Table). Used by the offline
+-- sync flow so queued offline data can be correlated to a device/push token.
+CREATE TABLE IF NOT EXISTS device_registrations (
+    device_id          TEXT PRIMARY KEY,
+    user_id            TEXT NOT NULL,
+    device_type        TEXT NOT NULL DEFAULT 'web',
+    device_name        TEXT,
+    push_token         TEXT,
+    is_active          INTEGER NOT NULL DEFAULT 1,
+    last_synced        TEXT,
+    created_at         TEXT NOT NULL,
+    updated_at         TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_contacts_user ON emergency_contacts(user_id);
 CREATE INDEX IF NOT EXISTS idx_sos_user ON sos_events(user_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON therapy_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_session ON therapy_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_alert_sos ON alert_logs(sos_id);
 CREATE INDEX IF NOT EXISTS idx_location_history_sos ON sos_location_history(sos_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_device_user ON device_registrations(user_id);
 """
 
 

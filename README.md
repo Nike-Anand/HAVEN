@@ -27,6 +27,8 @@ Layers keep the spec's responsibilities:
 - **Therapy Bot** — intent-based crisis engine, escalation detection, multilingual.
 - **Legal Bot** — retrieval over an Indian women's rights knowledge base + helplines.
 - **Contacts** — add / verify / list / delete emergency contacts.
+- **Settings** — notification + privacy preferences (spec: Settings & Preferences).
+- **Sync** — offline queue replay (`/sync`) + device registration for offline mode.
 - **Encryption** — sensitive fields (name, address, messages) encrypted at rest.
 
 The AI bots expose the exact payload shape of the spec's Bedrock (Claude 3)
@@ -98,6 +100,11 @@ cd frontend && npm run build                 # production build sanity check
 | POST   | `/contacts/{id}/verify` | Verify contact |
 | GET    | `/contacts` | List contacts |
 | DELETE | `/contacts/{id}` | Remove contact |
+| PUT    | `/settings/notification-preferences` | Save notification preferences |
+| PUT    | `/settings/privacy` | Save privacy preferences |
+| GET    | `/settings` | Fetch saved preferences (defaults if unset) |
+| POST   | `/sync/device` | Register a mobile/web device |
+| POST   | `/sync` | Replay an offline queue of SOS + messages |
 
 ---
 

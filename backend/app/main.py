@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import config, db
-from .routers import auth, contacts, legal, sos, therapy, stegano
+from .routers import auth, contacts, legal, settings, sos, stegano, sync, therapy
 
 
 @asynccontextmanager
@@ -37,6 +37,8 @@ app.include_router(sos.router)
 app.include_router(therapy.router)
 app.include_router(contacts.router)
 app.include_router(legal.router)
+app.include_router(settings.router)
+app.include_router(sync.router)
 app.include_router(stegano.router)
 
 
