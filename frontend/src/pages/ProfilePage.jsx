@@ -28,7 +28,6 @@ const LANGUAGES = [
 ];
 
 const NOTIF_DEFAULTS = {
-  sms_alerts: true,
   email_alerts: true,
   push_notifications: true,
   vibration: true,
@@ -80,7 +79,6 @@ function NotificationSettings() {
       {msg.ok && <Alert severity="success">{msg.ok}</Alert>}
       <Typography variant="subtitle2" sx={{ mt: 1 }}>Alerts</Typography>
       {Object.entries({
-        sms_alerts: "SMS alerts to emergency contacts",
         email_alerts: "Email notifications",
         push_notifications: "Push notifications",
         vibration: "Vibration on SOS",

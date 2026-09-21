@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from .. import db, schemas
 from ..ai.therapy_bot import generate_therapy_response
+from ..gemini_runtime import generate_therapy_with_gemini
 from ..deps import get_current_user
 from ..encryption import decrypt_text, encrypt_text
 
@@ -62,8 +63,8 @@ def send_message(
         )
         conn.commit()
 
-    # AI reasoning (offline rule-based engine; swap for Bedrock in production).
-    result = generate_therapy_response(payload.message, payload.language)
+    # Fallback AI generation using Gemini when AWS Bedrock access is blocked.
+    result = generate_therapy_with_gemini(payload.message, payload.language)
 
     with db.get_connection() as conn:
         conn.execute(

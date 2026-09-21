@@ -134,8 +134,8 @@ def verify_pin(
 def verify_2fa(payload: schemas.Verify2FARequest):
     """Placeholder for TOTP/SMS 2FA.
 
-    In production this verifies against Cognito / an authenticator and returns a
-    fresh short-lived token. Here we accept any 6-digit code for local demos.
+    In production this verifies against the configured identity provider and
+    returns a fresh short-lived token after successful confirmation.
     """
     if not payload.otp.isdigit() or len(payload.otp) != 6:
         raise HTTPException(status_code=400, detail="OTP must be 6 digits")

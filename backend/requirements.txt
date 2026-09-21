@@ -3,6 +3,13 @@ fastapi==0.110.0
 uvicorn[standard]
 pydantic==2.6.4
 
+# AWS production runtime (Bedrock + SNS)
+boto3==1.35.49
+
+# AI provider runtime for Gemini fallback when AWS Bedrock access is blocked.
+google-generativeai==0.8.3
+requests==2.32.3
+
 # Required by the SOS audio-upload & stegano endpoints (File/Form parsing)
 python-multipart
 

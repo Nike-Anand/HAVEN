@@ -29,11 +29,13 @@ export default function ActiveSOSPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!sosId) return;
+
     dispatch(fetchSOSStatus(sosId))
       .unwrap()
-      .then(({ payload }) => {
-        setStatus(payload);
-        setElapsed(payload.duration_seconds);
+      .then((data) => {
+        setStatus(data);
+        setElapsed(data?.duration_seconds ?? 0);
       })
       .catch(() => setError("Could not load SOS status."));
     // eslint-disable-next-line

@@ -20,14 +20,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 
 import { apiError } from "../api/client.js";
-import {
-  addContact, deleteContact, fetchContacts, verifyContact,
-} from "../store/slices/contactsSlice.js";
+import { addContact, deleteContact, fetchContacts } from "../store/slices/contactsSlice.js";
 
 export default function ContactsPage() {
   const dispatch = useDispatch();
   const { list, status } = useSelector((s) => s.contacts);
-  const [form, setForm] = useState({ name: "", phone: "", relationship: "family", priority: 3 });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", relationship: "Mother", priority: 3 });
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -43,16 +41,11 @@ export default function ContactsPage() {
     setError("");
     try {
       await dispatch(addContact(form)).unwrap();
-      setForm({ name: "", phone: "", relationship: "family", priority: 3 });
+      setForm({ name: "", phone: "", email: "", relationship: "Mother", priority: 3 });
       dispatch(fetchContacts());
     } catch (err) {
       setError(apiError(err));
     }
-  }
-
-  async function handleVerify(contact) {
-    await dispatch(verifyContact({ contactId: contact.contact_id, verificationCode: "000000" })).unwrap();
-    dispatch(fetchContacts());
   }
 
   async function handleDelete(contact) {
@@ -60,48 +53,50 @@ export default function ContactsPage() {
   }
 
   return (
-    <Stack spacing={2}>
-      <Typography variant="h5" sx={{ fontWeight: 600 }}>Emergency Contacts</Typography>
+    <Stack spacing={2.5}>
+      <Typography variant="h4" sx={{ fontWeight: 800 }}>Emergency Contacts</Typography>
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Card variant="outlined">
+      <Card
+        variant="outlined"
+        sx={{
+          borderRadius: 3,
+          border: "1px solid rgba(124,58,237,0.12)",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,242,255,0.96))",
+        }}
+      >
         <CardContent>
-          <Typography variant="h6">Add a trusted contact</Typography>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <TextField label="Name" size="small" value={form.name} onChange={update("name")} />
-            <TextField label="Phone" size="small" value={form.phone} onChange={update("phone")} />
-            <TextField select label="Relationship" size="small" value={form.relationship} sx={{ minWidth: 140 }}>
-              {["family", "friend", "counselor", "police"].map((r) => (
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>Add a trusted contact</Typography>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} sx={{ alignItems: "stretch" }}>
+            <TextField label="Name" size="small" value={form.name} onChange={update("name")} sx={{ flex: 1, bgcolor: "#fff" }} />
+            <TextField label="Phone" size="small" value={form.phone} onChange={update("phone")} sx={{ flex: 1, bgcolor: "#fff" }} />
+            <TextField label="Email" type="email" size="small" value={form.email} onChange={update("email")} sx={{ flex: 1, bgcolor: "#fff" }} />
+            <TextField select label="Relationship" size="small" value={form.relationship} sx={{ minWidth: 180, bgcolor: "#fff" }}>
+              {["Mother", "Father", "Sibling", "Spouse", "Friend", "Counselor", "Other"].map((r) => (
                 <MenuItem key={r} value={r}>{r}</MenuItem>
               ))}
             </TextField>
-            <Button variant="contained" onClick={handleAdd} disabled={!form.name || !form.phone}>
+            <Button
+              variant="contained"
+              onClick={handleAdd}
+              disabled={!form.name || !form.phone}
+              sx={{ minWidth: 120, borderRadius: 2, fontWeight: 700 }}
+            >
               Add
             </Button>
           </Stack>
-          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 1 }}>
-            A verification code is sent to the contact before they can receive alerts (demo: any code verifies).
-          </Typography>
         </CardContent>
       </Card>
 
       {status === "loading" && <CircularProgress />}
       <List>
         {list.map((c) => (
-          <ListItem key={c.contact_id}>
+          <ListItem key={c.contact_id} sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.05)", mb: 1, bgcolor: "#fff" }}>
             <ListItemText
               primary={`${c.name}  ·  ${c.relationship}`}
               secondary={`${c.phone}  ·  priority ${c.priority}`}
             />
             <ListItemSecondaryAction>
-              <Chip
-                size="small"
-                color={c.status === "verified" ? "success" : "warning"}
-                label={c.status}
-              />
-              {c.status !== "verified" && (
-                <Button size="small" onClick={() => handleVerify(c)}>Verify</Button>
-              )}
               <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(c)}>
                 <Delete color="error" />
               </IconButton>

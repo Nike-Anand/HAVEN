@@ -9,7 +9,6 @@ def test_settings_require_auth(client):
 def test_notification_preferences_roundtrip(client, auth_headers):
     headers = {k: v for k, v in auth_headers.items() if not k.startswith("_")}
     payload = {
-        "sms_alerts": True,
         "email_alerts": False,
         "push_notifications": True,
         "vibration": False,

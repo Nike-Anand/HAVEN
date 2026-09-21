@@ -1,6 +1,9 @@
 """SOS trigger / status / cancel / respond tests."""
 import pytest
 
+from app.encryption import encrypt_text
+from app.gemini_runtime import send_smtp_alert
+
 
 def _add_verified_contact(client, headers):
     resp = client.post(
@@ -83,3 +86,51 @@ def test_full_sos_flow(client, auth_headers):
     cancel = client.post(f"/sos/{sos_id}/cancel", headers=headers, json={"reason": "False alarm"})
     assert cancel.status_code == 200
     assert client.get(f"/sos/{sos_id}/status", headers=headers).json()["status"] == "cancelled"
+
+
+def test_send_smtp_alert_uses_decrypted_contact_email(monkeypatch):
+    captured = {}
+
+    class DummySMTP:
+        def __init__(self, host, port):
+            captured["host"] = host
+            captured["port"] = port
+            captured["recipients"] = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def starttls(self):
+            captured["starttls"] = True
+
+        def login(self, username, password):
+            captured["username"] = username
+            captured["password"] = password
+
+        def send_message(self, msg):
+            captured["recipients"].append(msg["To"])
+            captured["subject"] = msg["Subject"]
+
+    monkeypatch.setattr("smtplib.SMTP", DummySMTP)
+    monkeypatch.setattr("app.gemini_runtime.config.SMTP_USERNAME", "sender@example.com")
+    monkeypatch.setattr("app.gemini_runtime.config.SMTP_PASSWORD", "secret")
+    monkeypatch.setattr("app.gemini_runtime.config.SMTP_HOST", "smtp.gmail.com")
+    monkeypatch.setattr("app.gemini_runtime.config.SMTP_PORT", 587)
+    monkeypatch.setattr("app.gemini_runtime.config.SMTP_USE_TLS", True)
+    monkeypatch.setattr("app.gemini_runtime.config.SMTP_FROM", "sender@example.com")
+
+    payload = [{"email_encrypted": encrypt_text("alice@example.com")}]
+    result = send_smtp_alert(
+        "user@example.com",
+        "sos-123",
+        payload,
+        {"latitude": 12.97, "longitude": 77.59},
+        severity="critical",
+    )
+
+    assert result["sent"] == 2
+    assert captured["recipients"] == ["sender@example.com", "alice@example.com"]
+    assert result["failures"] == []

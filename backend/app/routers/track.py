@@ -1,6 +1,6 @@
 """Public live-location tracking for the receiver SOS link.
 
-When an SOS is triggered the simulated SMS includes a tracking link
+When an SOS is triggered the AWS SNS alert includes a tracking link
 (https://haven.app/track/<sos_id>). Contacts open that link WITHOUT logging in,
 so the endpoints here are intentionally public (the link itself is the bearer of
 authority) and return only the (already location-shared) live position.

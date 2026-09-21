@@ -132,7 +132,6 @@ class VerifyPinRequest(BaseModel):
 
 
 class NotificationPreferences(BaseModel):
-    sms_alerts: bool = True
     email_alerts: bool = True
     push_notifications: bool = True
     vibration: bool = True

@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import DashboardPage from "./pages/DashboardPage.jsx";
-import CalculatorPage from "./pages/CalculatorPage.jsx";
 import ContactsPage from "./pages/ContactsPage.jsx";
 import Layout from "./components/Layout.jsx";
 import LegalPage from "./pages/LegalPage.jsx";
@@ -30,7 +29,6 @@ export default function App() {
         <Route path="/contacts" element={<ContactsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/sos/:sosId" element={<ActiveSOSPage />} />
-        <Route path="/calculator" element={<CalculatorPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

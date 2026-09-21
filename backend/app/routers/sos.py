@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from .. import db, schemas
+from ..gemini_runtime import send_smtp_alert
 from ..deps import get_current_user
 from ..encryption import encrypt_text
 
@@ -160,10 +161,23 @@ def trigger_sos(
         )
         conn.commit()
         
-    # --- SIMULATED TWILIO SMS DISPATCH ---
+    # Send SOS alerts to verified contacts via SMTP email fallback while AWS SNS remains blocked.
+    sms_result = send_smtp_alert(
+        email=user["email"],
+        sos_id=sos_id,
+        contacts=[dict(c) for c in contacts],
+        location={
+            "latitude": payload.location.latitude,
+            "longitude": payload.location.longitude,
+            "address": payload.location.address,
+        },
+        severity=payload.severity,
+    )
+
     print("\n" + "="*50)
-    print("🚨 TWILIO SMS DISPATCH SIMULATION 🚨")
+    print("🚨 SOS ALERT DISPATCH 🚨")
     print(f"To: {len(contacts)} Emergency Contacts")
+    print("Mode: SMTP fallback")
     print(f"Message: URGENT: {user['email']} has triggered a HAVEN SOS alert! They may be in danger.")
     print(f"Track their LIVE location here: https://haven.app/track/{sos_id}")
     print("Reply 'ON_WAY' or 'POLICE' to acknowledge.")
@@ -177,6 +191,7 @@ def trigger_sos(
         "therapy_bot_ready": True,
         "therapy_session_id": session_id,
         "authorities_notified": bool(user["notify_authorities"]),
+        "sms_delivery": sms_result,
     }
 
 class LocationUpdate(BaseModel):
@@ -302,4 +317,4 @@ async def upload_audio(
     file_path = f"audio_logs/{sos_id}_{file.filename}"
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    return {"message": "Audio saved successfully", "path": file_path}
+    return {"message": "Audio saved successfully", "path": file_path}

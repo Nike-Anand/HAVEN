@@ -37,22 +37,19 @@ def test_contact_lifecycle(client, auth_headers):
     add = client.post(
         "/contacts/add",
         headers=headers,
-        json={"name": "Mom", "phone": "+91-90000-00000", "relationship": "family"},
+        json={
+            "name": "Mom",
+            "phone": "+91-90000-00000",
+            "email": "mom@example.com",
+            "relationship": "Mother",
+        },
     )
     assert add.status_code == 201
     contact_id = add.json()["contact_id"]
 
-    # Unverified at first.
     listing = client.get("/contacts", headers=headers).json()
-    assert listing["contacts"][0]["status"] == "unverified"
-
-    verify = client.post(
-        f"/contacts/{contact_id}/verify",
-        headers=headers,
-        json={"contact_id": contact_id, "verification_code": "000000"},
-    )
-    assert verify.status_code == 200
-    assert client.get("/contacts", headers=headers).json()["contacts"][0]["status"] == "verified"
+    assert listing["contacts"][0]["status"] == "verified"
+    assert listing["contacts"][0]["email"] == "mom@example.com"
 
     delete = client.delete(f"/contacts/{contact_id}", headers=headers)
     assert delete.status_code == 200
